@@ -1,0 +1,21 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Publicly readable media (portfolio photos/videos, hero video, etc.)
+    // so the live website can display uploaded assets.
+    match /uploads/{allPaths=**} {
+      allow read: if true;
+      // Only a signed-in admin account can upload or replace media.
+      allow create, update: if request.auth != null
+                   && request.resource.size < 1024 * 1024 * 1024 // 1GB cap
+                   && request.resource.contentType.matches('image/.*|video/.*');
+      // Only a signed-in admin account can delete media.
+      allow delete: if request.auth != null;
+    }
+
+    // Deny everything else by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
